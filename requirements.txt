@@ -5,3 +5,6 @@ apache-beam
 pandas
 pytest
 joblib
+fastapi[all]
+pydantic
+pyyaml

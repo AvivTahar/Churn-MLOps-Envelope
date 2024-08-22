@@ -14,9 +14,12 @@ TRAIN_FILE = 'original_dataset.csv'
 TEST_FILE_ONE = 'database_input.csv'  
 TEST_FILE_TWO = 'database_input2.csv'  
 TEST_FILE_THREE = 'database_input3.csv'  
-TEST_FILE_FOUR = 'databset_input4.csv'  
-TEST_FILE_FIVE = 'databset_input5.csv'  
+TEST_FILE_FOUR = 'dataset_input4.csv'  
+TEST_FILE_FIVE = 'dataset_input5.csv'  
 ORIG_DATA_PATH = os.path.join(DATA_PATH, TRAIN_FILE)
+
+# DATABASES
+DB_SUFFIX = '.csv'
 
 
 # Model configuration

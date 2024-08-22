@@ -17,6 +17,13 @@ from prediction_model.config import config
 def filter_features(element):
     return {key: element[key] for key in config.FEATURES_AFTER_CONTRACT}
 
+def find_leading_column_index(header, target_column=config.LEADING_COLUMN):
+    columns = header.split(',')
+    if target_column in columns:
+        return columns.index(target_column)
+    else:
+        raise ValueError(f"'{target_column}' column not found in the header.")
+    
 def convert_dict_to_string(element):
     return ','.join(str(element.get(col, '')) for col in config.FEATURES)
 
@@ -108,6 +115,8 @@ class FillTenureWithMean(beam.DoFn):
            (isinstance(tenure_value, float) and math.isnan(tenure_value)):
             # TODO: COUNTER HERE
             element['tenure'] = float(self.tenure_mean)
+        elif tenure_value == '':
+            element['tenure'] = 0.0
         else:
             element['tenure'] = float(element['tenure'])
         
@@ -119,13 +128,16 @@ class MapPhoneService(beam.DoFn):
         yield element
 
 def run_pipeline(input_file, output_file, db_out_suffix):
-        
     options = PipelineOptions()
     p = beam.Pipeline(options=options)
 
+    with open(input_file, 'r') as f:
+        header = f.readline().strip()
+        customer_id_index = find_leading_column_index(header)
+
     processed_data = (p
      | 'Read CSV' >> beam.io.ReadFromText(input_file, skip_header_lines=1)
-     | 'To Dict' >> beam.Map(lambda x: dict(zip(config.COLUMN_NAMES, x.split(',')[1:])))
+     | 'To Dict' >> beam.Map(lambda x: dict(zip(config.COLUMN_NAMES, x.split(',')[customer_id_index:])))
      | 'Filter Features' >> beam.Map(filter_features)
      | 'Filter Invalid Contracts' >> beam.ParDo(FilterInvalidContract())
      | 'OHE Contract' >> beam.ParDo(OHEContract())
@@ -135,8 +147,6 @@ def run_pipeline(input_file, output_file, db_out_suffix):
      | 'Map PhoneService' >> beam.ParDo(MapPhoneService())
      | 'Convert Dict to String' >> beam.Map(convert_dict_to_string)
     )
-    #  | 'Write Output' >> beam.io.WriteToText(output_file, file_name_suffix=db_out_suffix) 
-    #  | 'Print' >> beam.Map(print)
 
     header_str = ','.join(config.FEATURES)
     output_data = (
@@ -149,7 +159,7 @@ def run_pipeline(input_file, output_file, db_out_suffix):
     result.wait_until_finish()
 
 if __name__ == '__main__':
-    input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_ONE)
+    input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_TWO)
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
     db_out_suffix = '.csv'
     shards = 1

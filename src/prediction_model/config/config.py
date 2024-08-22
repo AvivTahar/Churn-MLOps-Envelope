@@ -24,6 +24,7 @@ MODEL_NAME = 'churn_model.pickle'
 SAVE_MODEL_PATH = os.path.join(PACKAGE_ROOT, 'models')
 
 TARGET = 'Churn'
+LEADING_COLUMN = 'customerID'
 
 FEATURES = ['TotalCharges', 'Month-to-month', 'One year', 'Two year', 'PhoneService', 'tenure']
 FEATURES_AFTER_CONTRACT = ['TotalCharges', 'Contract', 'PhoneService', 'tenure']

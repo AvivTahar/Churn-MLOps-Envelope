@@ -48,6 +48,9 @@ FEATURE_TO_FILL = {'TotalCharges': 2279}
 # Columns to drop (if any)
 DROP_FEATURES = []
 
+# FAST API CONFIGURATIONS
+FAST_API_PATH = os.path.join(PACKAGE_ROOT, 'app')
+
 # Python and library versions
 PYTHON_VERSION = "3.10.12"
 PANDAS_VERSION = "2.0.3"

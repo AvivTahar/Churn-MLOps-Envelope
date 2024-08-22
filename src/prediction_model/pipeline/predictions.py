@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import sys
-from preprocessing import run_pipeline  # Adjust the import if preprocessing.py is in a different location
+from prediction_model.pipeline.preprocessing import run_pipeline  # Adjust the import if preprocessing.py is in a different location
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prediction_model.config import config
@@ -32,7 +32,7 @@ def make_prediction(model, preprocessed_data_file):
 
 def main():
     # Paths to the input and output files
-    input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_FIVE)
+    input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_ONE)
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
 
     # Preprocess the data

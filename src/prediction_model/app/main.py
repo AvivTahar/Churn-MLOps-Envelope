@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError, ConfigDict
 import argparse
+from typing import Optional, Union
 from prediction_model.config import config
 from prediction_model.pipeline.predictions import load_model, preprocess_data_from_json, make_prediction
 
@@ -24,10 +25,10 @@ app = FastAPI()
 model = load_model(os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME))
 
 class PredictionRequest(BaseModel):
-    Contract: str
-    tenure: int
-    TotalCharges: str
-    PhoneService: str = Field(None)
+    Contract: Optional[Union[str, float, int]] = Field(None, description="The type of contract the customer has")
+    tenure: Optional[Union[str, float, int]] = Field(None, description="The number of months the customer has been with the company")
+    TotalCharges: Optional[Union[str, float, int]] = Field(None, description="Total charges to the customer")
+    PhoneService: Optional[Union[str, float, int]] = Field(None, description="Indicates if the customer has phone service")
 
     model_config = ConfigDict(extra='allow')
 

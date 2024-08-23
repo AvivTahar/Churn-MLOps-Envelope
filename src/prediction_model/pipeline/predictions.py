@@ -30,6 +30,14 @@ def make_prediction(model, preprocessed_data_file):
     predictions = model.predict(data)
     return predictions
 
+def save_predictions(predictions, output_file, suffix=".csv"):
+    """Save the predictions to a file."""
+    predictions_file = f"{output_file}_predictions{suffix}"
+    predictions_df = pd.DataFrame(predictions, columns=["Prediction"])
+    predictions_df.to_csv(predictions_file, index=False)
+
+    print(f"Predictions saved to {predictions_file}")
+
 def main():
     # Assume we have JSON data instead of a CSV file
     json_data = [
@@ -37,18 +45,14 @@ def main():
         {"Unnamed: 0": 2113, "customerID": "7607-QKKTJ", "gender": "Male", "SeniorCitizen": 0, "Partner": "Yes", "Dependents": "Yes", "tenure": 45, "PhoneService": "Yes", "MultipleLines": "Yes", "InternetService": "Fiber optic", "OnlineSecurity": "No", "OnlineBackup": "Yes", "DeviceProtection": "Yes", "TechSupport": "No", "StreamingTV": "No", "StreamingMovies": "Yes", "Contract": "One year", "PaperlessBilling": "Yes", "PaymentMethod": "Credit card (automatic)", "MonthlyCharges": 95.0, "TotalCharges": "4368.85"}
     ]
 
-    # Define the output file and suffix
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
-
-    # Preprocess the data using the JSON input
     preprocessed_data_file = preprocess_data_from_json(json_data, output_file, config.DB_SUFFIX)
 
-    # Load the model
     model_path = os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME)
     model = load_model(model_path)
 
-    # Make predictions
     predictions = make_prediction(model, preprocessed_data_file)
+    save_predictions(predictions, output_file)
     print(predictions)
 
 if __name__ == '__main__':

@@ -167,7 +167,7 @@ def run_pipeline_from_json(json_data, output_file, db_out_suffix):
     if is_json_empty(json_data):
         # TODO: MONITOR LOG
         print(f"Request is empty")
-        return False
+        raise RuntimeError(f'Request is empty')
     else:
         print(f"Request contains data.")
 

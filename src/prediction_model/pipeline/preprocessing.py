@@ -12,23 +12,44 @@ from io import StringIO
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prediction_model.config import config
 
-def is_csv_empty(file_path):
-    with open(file_path, 'r') as file:
-        header = file.readline().strip()
-        for line in file:
-            if line.strip():  # If we find a non-empty line
-                return False
+def is_json_empty(json_data):
+    """Check if the JSON data is empty or only contains empty objects."""
+    if not json_data:
+        # If the list is empty
         return True
+    
+    # Check if all entries in the list are empty dictionaries
+    for entry in json_data:
+        if entry:  # If there's any non-empty dictionary
+            return False
+    
+    return True
+
+def filter_columns_leading_index(entry, index):
+    keys = list(entry.keys())
+    features_to_keep = keys[index:]
+    for feature in config.FEATURES_AFTER_CONTRACT:
+        if feature not in features_to_keep:
+            features_to_keep.append(feature)
+    filtered_entry = {key: entry[key] for key in features_to_keep}
+    
+    return filtered_entry
 
 def filter_features(element):
     return {key: element[key] for key in config.FEATURES_AFTER_CONTRACT}
 
-def find_leading_column_index(header, target_column=config.LEADING_COLUMN):
-    columns = header.split(',')
-    if target_column in columns:
-        return columns.index(target_column)
-    else:
-        raise ValueError(f"'{target_column}' column not found in the header.")
+def find_leading_column_index_in_json(json_data, leading_column='customerID'):
+    """Find the index of the leading column in the JSON data."""
+    if not json_data:
+        raise ValueError("JSON data is empty")
+
+    first_entry = json_data[0]          # Assuming structure as in input_files, might change.
+    keys = list(first_entry.keys())
+
+    try:
+        return keys.index(leading_column)
+    except ValueError:
+        raise ValueError(f"Leading column '{leading_column}' not found in JSON data")
     
 def convert_dict_to_string(element):
     return ','.join(str(element.get(col, '')) for col in config.FEATURES)
@@ -44,6 +65,11 @@ def dict_to_csv_row(element, headers=None):
     
     return output.getvalue().strip()
 
+def csv_to_json(file_path):
+    """Convert the CSV file to a JSON-like structure."""
+    df = pd.read_csv(file_path)
+    return df.to_dict(orient='records')
+
 class FillTotalCharges(beam.DoFn):
     def __init__(self, default_value=2279.0):
         self.default_value = default_value
@@ -53,7 +79,8 @@ class FillTotalCharges(beam.DoFn):
         if total_charges is None or total_charges == '' or isinstance(total_charges, float) and math.isnan(total_charges):
             total_charges = str(self.default_value)
 
-        total_charges = total_charges.replace(' ', str(self.default_value))
+        if isinstance(total_charges, str):
+            total_charges = total_charges.replace(' ', str(self.default_value))
         
         try:
             element['TotalCharges'] = float(total_charges)
@@ -133,24 +160,27 @@ class MapPhoneService(beam.DoFn):
         element['PhoneService'] = 1 if element['PhoneService'].lower() == 'yes' else 0
         yield element
 
-def run_pipeline(input_file, output_file, db_out_suffix):
+def run_pipeline_from_json(json_data, output_file, db_out_suffix):
     options = PipelineOptions()
     p = beam.Pipeline(options=options)
     
-    if is_csv_empty(file_path=input_file):
+    if is_json_empty(json_data):
         # TODO: MONITOR LOG
-        print(f"{input_file} is empty or only contains a header.")
+        print(f"Request is empty")
         return False
     else:
-        print(f"{input_file} contains data.")
+        print(f"Request contains data.")
 
-    with open(input_file, 'r') as f:
-        header = f.readline().strip()
-        customer_id_index = find_leading_column_index(header)
+    # Find the index of the leading column
+    customer_id_index = find_leading_column_index_in_json(json_data, leading_column='customerID')
 
-    processed_data = (p
-     | 'Read CSV' >> beam.io.ReadFromText(input_file, skip_header_lines=1)
-     | 'To Dict' >> beam.Map(lambda x: dict(zip(config.COLUMN_NAMES, x.split(',')[customer_id_index:])))
+    # Step 1: Convert JSON to a PCollection of dictionaries
+    input_data = (p 
+        | 'Create Input PCollection' >> beam.Create(json_data)
+        | 'Filter Columns' >> beam.Map(filter_columns_leading_index, customer_id_index)
+    )
+    
+    processed_data = (input_data
      | 'Filter Features' >> beam.Map(filter_features)
      | 'Filter Invalid Contracts' >> beam.ParDo(FilterInvalidContract())
      | 'OHE Contract' >> beam.ParDo(OHEContract())
@@ -174,25 +204,33 @@ def run_pipeline(input_file, output_file, db_out_suffix):
     return True
 
 if __name__ == '__main__':
+    # Load CSV data and convert it to JSON format
     input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_FIVE)
+    json_data = csv_to_json(input_file)
+
+    # Define the output file and suffix
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
     db_out_suffix = '.csv'
-    shards = 1
 
-    pipline_success = run_pipeline(input_file, output_file, db_out_suffix)
+    # Run the pipeline with the JSON data
+    pipeline_success = run_pipeline_from_json(json_data, output_file, db_out_suffix)
 
-    if pipline_success:
+    if pipeline_success:
+        # Load the trained model
         with open(os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME), 'rb') as f:
             rf_model = pickle.load(f)
         
-        # TODO: ASSERT 
+        # Verify the model type
         if isinstance(rf_model, RandomForestClassifier):
             print("The model was loaded successfully and is a RandomForestClassifier.")
 
-        # 2. Check some of the model's attributes
-        ## ASSERT TODO: 
+        # Check some of the model's attributes
         print("Number of trees in the forest:", rf_model.n_estimators)
         print("Features considered in the first tree:", rf_model.estimators_[0].n_features_in_)
 
-        print(rf_model.predict(pd.read_csv(output_file + db_out_suffix)))
+        # Make predictions on the processed output data
+        processed_df = pd.read_csv(output_file + db_out_suffix)
+        predictions = rf_model.predict(processed_df)
+        print(predictions)
+        
         # TODO: CHECK THAT THE RESULTS MATCH THE ONES FROM THE DS

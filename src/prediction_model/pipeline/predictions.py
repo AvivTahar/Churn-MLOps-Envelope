@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import sys
-from prediction_model.pipeline.preprocessing import run_pipeline  # Adjust the import if preprocessing.py is in a different location
+from prediction_model.pipeline.preprocessing import run_pipeline_from_json  # Adjusted to use the JSON version of the pipeline
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prediction_model.config import config
@@ -17,26 +17,31 @@ def load_model(model_path):
         raise ValueError("Loaded model is not a RandomForestClassifier.")
     return model
 
-def preprocess_data(input_file, output_file, db_suffix):
-    """Run the preprocessing pipeline and return the path to the preprocessed data."""
-    pipeline_success = run_pipeline(input_file, output_file, db_suffix)
+def preprocess_data_from_json(json_data, output_file, db_suffix):
+    """Run the preprocessing pipeline with JSON input and return the path to the preprocessed data."""
+    pipeline_success = run_pipeline_from_json(json_data, output_file, db_suffix)
     if not pipeline_success:
         raise RuntimeError("Pipeline execution failed.")
     return output_file + db_suffix
 
 def make_prediction(model, preprocessed_data_file):
     """Run predictions using the pre-trained model on preprocessed data."""
-    data = pd.read_csv(preprocessed_data_file)
+    data = pd.read_csv(preprocessed_data_file)  # Adjust if you want to directly process JSON in-memory
     predictions = model.predict(data)
     return predictions
 
 def main():
-    # Paths to the input and output files
-    input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_ONE)
+    # Assume we have JSON data instead of a CSV file
+    json_data = [
+        {"Unnamed: 0": 2112, "customerID": "8383-SGHJU", "gender": "Female", "SeniorCitizen": 0, "Partner": "No", "Dependents": "No", "tenure": 33, "PhoneService": "Yes", "MultipleLines": "Yes", "InternetService": "DSL", "OnlineSecurity": "Yes", "OnlineBackup": "No", "DeviceProtection": "No", "TechSupport": "Yes", "StreamingTV": "No", "StreamingMovies": "No", "Contract": "One year", "PaperlessBilling": "No", "PaymentMethod": "Electronic check", "MonthlyCharges": 59.4, "TotalCharges": "1952.8"},
+        {"Unnamed: 0": 2113, "customerID": "7607-QKKTJ", "gender": "Male", "SeniorCitizen": 0, "Partner": "Yes", "Dependents": "Yes", "tenure": 45, "PhoneService": "Yes", "MultipleLines": "Yes", "InternetService": "Fiber optic", "OnlineSecurity": "No", "OnlineBackup": "Yes", "DeviceProtection": "Yes", "TechSupport": "No", "StreamingTV": "No", "StreamingMovies": "Yes", "Contract": "One year", "PaperlessBilling": "Yes", "PaymentMethod": "Credit card (automatic)", "MonthlyCharges": 95.0, "TotalCharges": "4368.85"}
+    ]
+
+    # Define the output file and suffix
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
 
-    # Preprocess the data
-    preprocessed_data_file = preprocess_data(input_file, output_file, config.DB_SUFFIX)
+    # Preprocess the data using the JSON input
+    preprocessed_data_file = preprocess_data_from_json(json_data, output_file, config.DB_SUFFIX)
 
     # Load the model
     model_path = os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME)

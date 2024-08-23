@@ -1,6 +1,6 @@
 server:
   host: "0.0.0.0"                             # The IP the fast api will listen on
-  port: 8000                             
+  port: 8080                             
   reload: true                                # Enable auto-reload for development, disable for production
 
 model:

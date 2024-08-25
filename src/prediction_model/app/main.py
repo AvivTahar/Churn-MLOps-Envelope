@@ -7,6 +7,19 @@ import argparse
 from typing import Optional, Union
 from prediction_model.config import config
 from prediction_model.pipeline.predictions import load_model, preprocess_data_from_json, make_prediction
+from prometheus_fastapi_instrumentator import Instrumentator
+from contextlib import asynccontextmanager
+
+instrumentator = Instrumentator()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Expose the Prometheus metrics
+    instrumentator.expose(app)
+    yield
+
+app = FastAPI(lifespan=lifespan)
+instrumentator.instrument(app)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="FastAPI application to serve predictions.")
@@ -21,7 +34,6 @@ def load_config(config_file=os.path.join(config.FAST_API_PATH, 'config.yml')):
     return config
 
 app_config = load_config()
-app = FastAPI()
 model = load_model(os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME))
 
 class PredictionRequest(BaseModel):
@@ -59,7 +71,6 @@ async def predict(request: list[PredictionRequest], background_tasks: Background
         return {"predictions": predictions.tolist()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 if __name__ == "__main__":
     import uvicorn

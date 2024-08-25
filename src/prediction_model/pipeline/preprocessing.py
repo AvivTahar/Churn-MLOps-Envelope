@@ -7,10 +7,16 @@ import pandas as pd
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
 from sklearn.ensemble import RandomForestClassifier
+from prometheus_client import Counter
 from io import StringIO
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from prediction_model.config import config
+
+invalid_contract_counter = Counter('invalid_contract_total', 'Total number of invalid contracts')
+tenure_filled_counter = Counter('tenure_filled_total', 'Total number of filled tenures')
+fill_phoneservice_counter = Counter('phoneservice_filled_total', 'Total number of filling PhoneService')
+
 
 def is_json_empty(json_data):
     """Check if the JSON data is empty or only contains empty objects."""
@@ -90,17 +96,12 @@ class FillTotalCharges(beam.DoFn):
         yield element
 
 class FilterInvalidContract(beam.DoFn):
-    def __init__(self):
-        # Initialize a counter for invalid rows
-        self.invalid_count = beam.metrics.Metrics.counter(self.__class__, 'invalid_contract_rows')
-    
     def process(self, element):
         contract_value = element.get('Contract')
         valid_contracts = {'One year', 'Two year', 'Month-to-month'}
         
         if (contract_value not in valid_contracts):
-            # TODO: COUNTER!! 
-            pass
+            invalid_contract_counter.inc()
         else:
             # Yield only valid rows
             yield element
@@ -133,7 +134,7 @@ class FillPhoneService(beam.DoFn):
         
         if phone_service_value is None or \
            (isinstance(phone_service_value, float) and math.isnan(phone_service_value)):
-            # TODO: MONITORRR
+            fill_phoneservice_counter.inc()
             element['PhoneService'] = 'No'
         
         yield element
@@ -141,12 +142,13 @@ class FillPhoneService(beam.DoFn):
 class FillTenureWithMean(beam.DoFn):
     def __init__(self):
         self.tenure_mean = pd.read_csv(config.ORIG_DATA_PATH)['tenure'].mean()
+        self.tenure_filled = tenure_filled_counter
     
     def process(self, element):
         tenure_value = element.get('tenure')
         if tenure_value is None or \
            (isinstance(tenure_value, float) and math.isnan(tenure_value)):
-            # TODO: COUNTER HERE
+            self.tenure_filled.inc()
             element['tenure'] = float(self.tenure_mean)
         elif tenure_value == '':
             element['tenure'] = 0.0
@@ -161,6 +163,7 @@ class MapPhoneService(beam.DoFn):
         yield element
 
 def run_pipeline_from_json(json_data, output_file, db_out_suffix):
+
     options = PipelineOptions()
     p = beam.Pipeline(options=options)
     

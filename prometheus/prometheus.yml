@@ -4,7 +4,7 @@ global:
 scrape_configs:
   - job_name: 'fastapi'
     static_configs:
-      - targets: ['host.docker.internal:8080']
+      - targets: ['churn_app:8080']
         labels:
           instance: 'my_fastapi_app'
 
@@ -13,9 +13,3 @@ scrape_configs:
       - targets: ['host.docker.internal:9100']
         labels:
           instance: 'node_exporter_data'
-  
-  - job_name: 'apache_beam_pipeline'
-    static_configs:
-      - targets: ['host.docker.internal:8300']
-        labels:
-          instance: 'beam_pipeline_data'

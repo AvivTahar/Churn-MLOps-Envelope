@@ -16,6 +16,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+      - churn_app
 
   prometheus:
     image: prom/prometheus:latest
@@ -27,6 +28,18 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - monitoring
+
+  churn_app:
+    image: avivsimontahar/churn-pro:latest
+    container_name: churn_app
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+    environment:
+      - APP_ENV=production
+    depends_on:
+      - prometheus
 
 volumes:
   grafana-data:

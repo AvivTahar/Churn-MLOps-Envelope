@@ -4,16 +4,16 @@ This project is designed to deploy and manage a churn prediction machine learnin
 
 # Features
 
-	•	Dockerized Environment: The entire setup, including model serving, monitoring with Prometheus, and visualization with Grafana, is containerized using Docker Compose.
-	•	Model Serving: A FastAPI application serves the model and handles prediction requests.
-	•	Monitoring and Visualization: Prometheus and Grafana are integrated for monitoring the application’s performance and visualizing metrics.
+	Dockerized Environment: The entire setup, including model serving, monitoring with Prometheus, and visualization with Grafana, is containerized using Docker Compose.
+	Model Serving: A FastAPI application serves the model and handles prediction requests.
+	Monitoring and Visualization: Prometheus and Grafana are integrated for monitoring the application’s performance and visualizing metrics.
 
 # Getting Started
 
 Prerequisites
 
-	•	Ensure you have Docker and Docker Compose installed on your machine.
-	•	Clone this repository.
+	Ensure you have Docker and Docker Compose installed on your machine.
+	Clone this repository.
 
 # Usage
 

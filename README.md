@@ -19,14 +19,14 @@ Clone this repository.
 
 Follow the steps below to set up and run the application:
 
-	1.	Clone the repository:
- git clone https://github.com/your-github-username/Churn-MLOps-Envelope.git
+1.	Clone the repository:
+	git clone https://github.com/your-github-username/Churn-MLOps-Envelope.git
 
- 	2.	Navigate to the project directory:
-  cd Churn-MLOps-Envelope
+2. Navigate to the project directory:
+	cd Churn-MLOps-Envelope
 
-  3.	Start the Docker containers:
-   docker compose up -d
+3. Start the Docker containers:
+	docker compose up -d
 
   This will start the FastAPI app, Prometheus, and Grafana containers in detached mode.
 

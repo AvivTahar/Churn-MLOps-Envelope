@@ -19,8 +19,8 @@ Clone this repository.
 
 Follow the steps below to set up and run the application:
 
-1.	Clone the repository:
-	git clone https://github.com/your-github-username/Churn-MLOps-Envelope.git
+**1.	Clone the repository:**
+	```bashgit clone https://github.com/your-github-username/Churn-MLOps-Envelope.git```
 
 2. Navigate to the project directory:
 	cd Churn-MLOps-Envelope

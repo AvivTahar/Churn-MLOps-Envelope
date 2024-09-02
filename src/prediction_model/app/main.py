@@ -3,7 +3,7 @@ import yaml
 import logging
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, ValidationError, ConfigDict
+from pydantic import BaseModel, Field, ValidationError, ConfigDict, model_validator
 import argparse
 from typing import Optional, Union
 from prediction_model.config import config
@@ -50,6 +50,12 @@ def load_model_with_logging(model_path):
 app_config = load_config()
 model = load_model_with_logging(os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME))
 
+from pydantic import BaseModel, Field, root_validator
+from typing import Optional, Union
+
+from pydantic import BaseModel, Field, ValidationError, model_validator
+from typing import Optional, Union
+
 class PredictionRequest(BaseModel):
     Contract: Optional[Union[str, float, int]] = Field(None, description="The type of contract the customer has")
     tenure: Optional[Union[str, float, int]] = Field(None, description="The number of months the customer has been with the company")
@@ -57,6 +63,12 @@ class PredictionRequest(BaseModel):
     PhoneService: Optional[Union[str, float, int]] = Field(None, description="Indicates if the customer has phone service")
 
     model_config = ConfigDict(extra='allow')
+
+    @model_validator(mode='before')
+    def check_empty_data(cls, values):
+        if not values:
+            raise ValueError("Empty data: The request contains no data.")
+        return values
 
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(request: Request, exc: ValidationError):

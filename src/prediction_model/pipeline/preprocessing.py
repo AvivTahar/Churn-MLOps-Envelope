@@ -168,7 +168,6 @@ def run_pipeline_from_json(json_data, output_file, db_out_suffix):
     p = beam.Pipeline(options=options)
     
     if is_json_empty(json_data):
-        # TODO: MONITOR LOG
         print(f"Request is empty")
         raise RuntimeError(f'Request is empty')
     else:
@@ -207,33 +206,26 @@ def run_pipeline_from_json(json_data, output_file, db_out_suffix):
     return True
 
 if __name__ == '__main__':
-    # Load CSV data and convert it to JSON format
+    
     input_file = os.path.join(config.DATA_PATH, config.TEST_FILE_FIVE)
     json_data = csv_to_json(input_file)
 
-    # Define the output file and suffix
     output_file = os.path.join(config.DATA_PATH, 'outputs/processed_output')
     db_out_suffix = '.csv'
 
-    # Run the pipeline with the JSON data
     pipeline_success = run_pipeline_from_json(json_data, output_file, db_out_suffix)
 
     if pipeline_success:
-        # Load the trained model
         with open(os.path.join(config.SAVE_MODEL_PATH, config.MODEL_NAME), 'rb') as f:
             rf_model = pickle.load(f)
         
-        # Verify the model type
         if isinstance(rf_model, RandomForestClassifier):
             print("The model was loaded successfully and is a RandomForestClassifier.")
 
-        # Check some of the model's attributes
         print("Number of trees in the forest:", rf_model.n_estimators)
         print("Features considered in the first tree:", rf_model.estimators_[0].n_features_in_)
 
-        # Make predictions on the processed output data
         processed_df = pd.read_csv(output_file + db_out_suffix)
         predictions = rf_model.predict(processed_df)
         print(predictions)
         
-        # TODO: CHECK THAT THE RESULTS MATCH THE ONES FROM THE DS

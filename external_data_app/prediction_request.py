@@ -38,9 +38,25 @@ def send_post_request(json_data, url):
     headers = {'Content-Type': 'application/json'}
     try:
         response = requests.post(url, headers=headers, data=json_data)
-        response.raise_for_status()  # Raise an HTTPError if the HTTP request returned an unsuccessful status code
+        
+        # Check for 500 Internal Server Error
+        if response.status_code == 500:
+            try:
+                # Decode the content and parse as JSON
+                error_message = response.json()
+                if "detail" in error_message and error_message["detail"] == "Request is empty":
+                    logger.warning(f"Request was empty: {error_message['detail']}")
+                    print("Request was empty. Aborting procedure.")
+                    return {}
+            except json.JSONDecodeError:
+                logger.error("Failed to decode JSON from response.")
+                raise
+        
+        # Raise an HTTPError if the status code indicates a failure and it's not a special case
+        response.raise_for_status()
         logger.info(f"Successfully sent POST request to {url}")
         return response.json()
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to send POST request to {url}. Error: {e}")
         raise
@@ -60,7 +76,7 @@ def main(file_name, from_percentage, to_percentage, url):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Send a CSV file data for predictions via a POST request.")
-    parser.add_argument('--file_name', type=str, default='external_data_app/data/database_input2.csv', help="The path to the CSV file.")
+    parser.add_argument('--file_name', type=str, default='external_data_app/data/database_input3.csv', help="The path to the CSV file.")
     parser.add_argument('--from_percentage', type=float, default=0.3, help="The starting percentage of data to use.")
     parser.add_argument('--to_percentage', type=float, default=0.7, help="The ending percentage of data to use.")
     parser.add_argument('--url', type=str, default="http://localhost:8080/predict/", help="The URL of the FastAPI prediction endpoint.")

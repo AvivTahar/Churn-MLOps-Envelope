@@ -60,7 +60,7 @@ def main(file_name, from_percentage, to_percentage, url):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description="Send a CSV file data for predictions via a POST request.")
-    parser.add_argument('--file_name', type=str, default='data/database_input2.csv', help="The path to the CSV file.")
+    parser.add_argument('--file_name', type=str, default='external_data_app/data/database_input2.csv', help="The path to the CSV file.")
     parser.add_argument('--from_percentage', type=float, default=0.3, help="The starting percentage of data to use.")
     parser.add_argument('--to_percentage', type=float, default=0.7, help="The ending percentage of data to use.")
     parser.add_argument('--url', type=str, default="http://localhost:8080/predict/", help="The URL of the FastAPI prediction endpoint.")

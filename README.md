@@ -19,33 +19,33 @@ Clone this repository.
 
 Follow the steps below to set up and run the application:
 
-**1.	Clone the repository:**
-	```bash
- git clone https://github.com/your-github-username/Churn-MLOps-Envelope.git
- ```
+1. Clone the repository:
+ 
+		git clone https://github.com/your-github-username/Churn-MLOps-Envelope.git
 
 2. Navigate to the project directory:
-	cd Churn-MLOps-Envelope
+		cd Churn-MLOps-Envelope
 
 3. Start the Docker containers:
-	docker compose up -d
+		docker compose up -d
 
   This will start the FastAPI app, Prometheus, and Grafana containers in detached mode.
 
-	4.	Send a prediction request:
+4. Send a prediction request:
+
 Navigate to the external_data_app directory to send a prediction request using the provided script:
 
-cd external_data_app
-python prediction_request.py --file_name data/{DATASET_NAME} --from_percentage (optional) --to_percentage (optional) --url http://localhost:8080/predict/
+		cd external_data_app
+		python prediction_request.py --file_name data/{DATASET_NAME} --from_percentage (optional) --to_percentage (optional) --url http://localhost:8080/predict/
 
 Replace {DATASET_NAME} with the name of your dataset file, and optionally specify the percentage range of data to use.
 
 Monitoring
 
-	•	Grafana: Access Grafana by navigating to http://localhost:3000 in your browser. The default credentials are:
-	•	Username: admin
-	•	Password: admin
-	•	Prometheus: Access Prometheus at http://localhost:9090 to view raw metrics.
+	Grafana: Access Grafana by navigating to http://localhost:3000 in your browser. The default credentials are:
+	Username: admin
+	Password: admin
+	Prometheus: Access Prometheus at http://localhost:9090 to view raw metrics.
 
 
   
